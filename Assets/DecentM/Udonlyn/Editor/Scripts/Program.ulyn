@@ -1,0 +1,7 @@
+﻿public class UlynTest
+{
+    public void DoTest()
+    {
+        return 1;
+    }
+}
