@@ -192,7 +192,20 @@ namespace UdonSharp.Compiler
             
             return ModuleBindings;
         }
-        
+
+        public ModuleBinding[] LoadSyntaxTreesAndCreateModules(string programSource, string sourcePath, string[] scriptingDefines)
+        {
+            ConcurrentBag<ModuleBinding> syntaxTrees = new ConcurrentBag<ModuleBinding>();
+
+            var programSyntaxTree = CSharpSyntaxTree.ParseText(programSource, CSharpParseOptions.Default.WithDocumentationMode(DocumentationMode.None).WithPreprocessorSymbols(scriptingDefines).WithLanguageVersion(LanguageVersion.CSharp7_3));
+
+            syntaxTrees.Add(new ModuleBinding() { tree = programSyntaxTree, filePath = sourcePath, sourceText = programSource });
+
+            ModuleBindings = syntaxTrees.ToArray();
+
+            return ModuleBindings;
+        }
+
         private static Dictionary<bool, IEnumerable<string>> _scriptPathCache = new Dictionary<bool, IEnumerable<string>>();
 
         public static IEnumerable<string> GetAllFilteredSourcePaths(bool isEditorBuild)
