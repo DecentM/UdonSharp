@@ -1,4 +1,6 @@
-﻿public class UlynTest
+﻿using System;
+
+public class UlynTest
 {
     public void DoTest()
     {

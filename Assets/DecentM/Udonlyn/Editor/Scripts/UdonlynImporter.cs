@@ -64,31 +64,9 @@ namespace DecentM.Udonlyn
 
             string source = Encoding.UTF8.GetString(encodedBytes);
 
-            // TextAsset asset = new TextAsset(source);
-            UdonlynProgramAsset programAsset = new UdonlynProgramAsset(Path.GetFileName(ctx.assetPath), source);
+            // UdonlynProgramAsset programAsset = ScriptableObject.CreateInstance();
 
-            UdonlynCompiler compiler = new UdonlynCompiler();
-
-            compiler.Compile(programAsset, "Program.ulyn", source);
-
-            /* Compiler.CompilationResult compiled = SubtitleCompiler.Compile(
-                source,
-                Path.GetExtension(ctx.assetPath),
-                SubtitleFormat.Vsi
-            );
-            TextAsset asset = new TextAsset(compiled.output);
-
-            if (compiled.errors.Count > 0)
-            {
-                foreach (CompilationResultError error in compiled.errors)
-                {
-                    ctx.LogImportWarning(error.value);
-                }
-
-                ctx.LogImportWarning(
-                    $"{compiled.errors.Count} error(s) encountered while compiling subtitle file, see above. Continuing with possibly incomplete compilation results..."
-                );
-            } */
+            UdonlynProgramAsset programAsset = new UdonlynProgramAsset(ctx.assetPath, source);
 
             ctx.AddObjectToAsset("main", programAsset);
             ctx.SetMainObject(programAsset);

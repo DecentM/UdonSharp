@@ -15,6 +15,7 @@ using Microsoft.CSharp;
 using Mono.Cecil;
 using System.CodeDom.Compiler;
 using System.CodeDom;
+using System;
 
 namespace DecentM.Udonlyn
 {
@@ -22,42 +23,66 @@ namespace DecentM.Udonlyn
     {
         // Input: C# source code
         // Output: Udon program assembly source
-        public string Compile(UdonlynProgramAsset program, string filename, string source)
+        public string Compile(string id, string source)
         {
             Debug.Log("Parsing syntax tree...");
 
             CSharpCompilationOptions options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
-            CSharpCompilation compilation = CSharpCompilation.Create($"UdonlynCompilation_{filename}", options: options);
+            CSharpCompilation compilation = CSharpCompilation.Create($"UdonlynCompilation_{id}", options: options);
             string[] defines = UdonlynUtils.GetProjectDefines();
 
             SyntaxTree tree = CSharpSyntaxTree.ParseText(source, CSharpParseOptions.Default.WithDocumentationMode(DocumentationMode.None).WithPreprocessorSymbols(defines));
+
+            // https://learn.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/get-started/syntax-transformation
+            // CompilationUnitSyntax root = (CompilationUnitSyntax)tree.GetRoot();
+            
+            // SyntaxList<UsingDirectiveSyntax> usings = root.Usings;
+            // Debug.Log(root.ToString());
 
             compilation.AddSyntaxTrees(tree);
 
             foreach (Diagnostic diagnostic in tree.GetDiagnostics())
             {
-                if (diagnostic.Severity == DiagnosticSeverity.Error)
-                {
-                    LinePosition linePosition = diagnostic.Location.GetLineSpan().StartLinePosition;
+                if (diagnostic.Severity != DiagnosticSeverity.Error)
+                    continue;
 
-                    Debug.LogError($"error {diagnostic.Descriptor.Id}: {diagnostic.GetMessage()} - {filename} line {linePosition.Line} column {linePosition.Character}");
+                LinePosition linePosition = diagnostic.Location.GetLineSpan().StartLinePosition;
+                Debug.LogError($"error {diagnostic.Descriptor.Id}: {diagnostic.GetMessage()} - {id} line {linePosition.Line} column {linePosition.Character}");
 
-                    // TODO: Handle error
-                }
+                // TODO: Handle the error better
             }
 
             // SemanticModel model = compilation.GetSemanticModel(tree);
 
-            /* using (MemoryStream stream = new MemoryStream())
+            byte[] builtAssembly = null;
+
+            using (MemoryStream stream = new MemoryStream())
             {
                 EmitResult emission = compilation.Emit(stream);
 
                 if (!emission.Success)
                     Debug.LogError("Emission not successful");
 
-                Debug.Log(Encoding.UTF8.GetString(stream.ToArray()));
-            } */
+                builtAssembly = stream.ToArray();
 
+                Debug.Log("C# assembly built");
+            }
+
+            Assembly assembly = null;
+
+            try
+            {
+                // TODO: WTF is this line? I'm assuming it somehow removes unused code from the assembly.
+                // using (new UdonSharpUtils.UdonSharpAssemblyLoadStripScope())
+                // https://github.com/vrchat-community/UdonSharp/blob/master/Packages/com.vrchat.UdonSharp/Editor/Compiler/UdonSharpCompilerV1.cs#L575
+                assembly = Assembly.Load(builtAssembly);
+            }
+            catch (Exception e)
+            {
+                // TODO: Handle error
+                Debug.LogException(e);
+                return "";
+            }
 
             return "";
         }

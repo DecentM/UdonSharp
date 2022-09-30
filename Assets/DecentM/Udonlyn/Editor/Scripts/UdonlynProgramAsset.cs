@@ -24,47 +24,21 @@ namespace DecentM.Udonlyn
     [CreateAssetMenu(menuName = "VRChat/Udon/Udonlyn C# Program Asset", fileName = "New Udonlyn C# Program Asset")]
     public class UdonlynProgramAsset : UdonAssemblyProgramAsset
     {
-        public UdonlynProgramAsset(string filename, string source)
+        private string source = string.Empty;
+
+        public UdonlynProgramAsset(string sourceFilename, string source)
         {
-            Debug.Log($"Compiling {filename}");
+            this.name = sourceFilename;
+            this.source = source;
 
-            SyntaxTree tree = CSharpSyntaxTree.ParseText(source);
-            CSharpCompilationOptions options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
-            CSharpCompilation compilation = CSharpCompilation.Create($"UdonlynCompilation_{filename}", syntaxTrees: new[] { tree }, null, options);
-            // SemanticModel model = compilation.GetSemanticModel(tree);
-
-            byte[] builtAssembly = null;
-
-            using (MemoryStream memoryStream = new MemoryStream())
-            {
-                EmitResult emitResult = compilation.Emit(memoryStream);
-                if (emitResult.Success)
-                {
-                    builtAssembly = memoryStream.ToArray();
-                }
-                else
-                {
-                    foreach (Diagnostic diag in emitResult.Diagnostics)
-                    {
-                        if (diag.Severity == DiagnosticSeverity.Error)
-                        {
-                            // TODO: Let the user know about errors
-
-                            // From UdonSharp:
-                            // compilationContext.AddDiagnostic(DiagnosticSeverity.Error, diag.Location, $"{diag.Severity.ToString().ToLower()} {diag.Id}: {diag.GetMessage()}");
-                        }
-                    }
-                }
-            }
-
-            // TODO: There are a bunch of checks here in UdonSharp to check that abstract classes are not used as if they were sealed and other stuff
-
-            // Debug.Log(model);
+            this.RefreshProgramImpl();
         }
 
         protected override void RefreshProgramImpl()
         {
-            this.udonAssembly = "";
+            UdonlynCompiler compiler = new UdonlynCompiler();
+
+            this.udonAssembly = compiler.Compile(this.name, this.source);
         }
     }
 }

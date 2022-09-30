@@ -16,6 +16,9 @@ namespace DecentM.Udonlyn
                 defines.Add(define);
             }
 
+            // TODO: Fake UdonSharp installation by adding COMPILER_UDONSHARP, but put it behind an opt-in
+            //       settings option.
+
             defines.Add("COMPILER_UDONLYN");
 
             return defines.ToArray();
